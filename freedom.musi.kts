@@ -1,4 +1,3 @@
-import musikt.SineWave
 val timing = Timing(160.0)
 val key = Note.C4.semitones(8).major()
 val lead = SineWave.fx { gain(0.3) }

@@ -6,7 +6,7 @@ import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
 
-@KotlinScript(fileExtension = "musi.kts")
+@KotlinScript(fileExtension = "musi.kts", compilationConfiguration = AudioScriptCompilationConfiguration::class)
 abstract class AudioScriptEnv
 object AudioScriptCompilationConfiguration : ScriptCompilationConfiguration({
     jvm {
