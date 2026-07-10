@@ -69,6 +69,8 @@ data class Key(val root: Note, val semitoneProgression: List<Int>) {
             semitoneProgression[index]
         })
     }
+
+    operator fun get(offset: Int) = note(offset)
 }
 
 fun Note.major() = Key(this, listOf(2, 2, 1, 2, 2, 2, 1))
