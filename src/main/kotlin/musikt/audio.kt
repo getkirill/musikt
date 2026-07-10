@@ -13,7 +13,7 @@ fun interpolateSum(a: Double, b: Double) = a + b
 fun mixSamples(
     samples: Iterable<Double>,
     interpolate: (Double, Double) -> Double = ::interpolateAverage
-) = samples.reduce(interpolate)
+) = samples.reduceOrNull(interpolate) ?: 0.0
 
 fun mixAudio(
     tracks: Iterable<Sequence<Double>>,
@@ -100,4 +100,28 @@ fun Sequence<Double>.saveAsAudio(file: File, sampleRate: Int = 44100) {
     AudioInputStream(byteArrayInputStream, format, frameLength).use { audioInputStream ->
         AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, file)
     }
+}
+
+class Audio(val data: Sequence<Double>, val sampleRate: Int) : Sequence<Double> by data {
+    fun save() = saveAsAudio(sampleRate)
+    fun save(file: File) = saveAsAudio(file, sampleRate)
+    fun play() = playAsAudio(sampleRate)
+}
+
+class AudioDsl {
+    var sampleRate = 44100
+    val tracks = mutableListOf<Pair<Instrument, Pattern>>()
+    fun track(instrument: Instrument, pattern: PatternBuilder.() -> Unit) {
+        val patternBuilder = PatternBuilder()
+        tracks.add(instrument to patternBuilder.apply(pattern).build())
+    }
+
+    fun synthesize(): Sequence<Double> =
+        mixAudio(tracks.map { Synthesizer(it.first, sampleRate).synthesize(it.second) })
+}
+
+fun audio(block: AudioDsl.() -> Unit): Audio {
+    val dsl = AudioDsl()
+    dsl.block()
+    return Audio(dsl.synthesize(), dsl.sampleRate)
 }
