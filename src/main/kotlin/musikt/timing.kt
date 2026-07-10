@@ -16,7 +16,7 @@ data class Timing(val bpm: Double, val timeSignature: TimeSignature = TimeSignat
     val whole get() = beatDuration * timeSignature.beatValue.toDouble()
     val half get() = whole / 2
     val quarter get() = whole / 4
-    val eight get() = whole / 8
+    val eighth get() = whole / 8
     val sixteenth get() = whole / 16
     operator fun times(d: Double) = beatDuration * d
 }
