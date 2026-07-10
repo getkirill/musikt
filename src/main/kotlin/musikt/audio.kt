@@ -7,15 +7,17 @@ import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
+fun interpolateAverage(a: Double, b: Double) = (a + b) / 2
+fun interpolateSum(a: Double, b: Double) = a + b
 
 fun mixSamples(
     samples: Iterable<Double>,
-    interpolate: (Double, Double) -> Double = { a, b -> (a + b) / 2 }
+    interpolate: (Double, Double) -> Double = ::interpolateAverage
 ) = samples.reduce(interpolate)
 
 fun mixAudio(
     tracks: Iterable<Sequence<Double>>,
-    interpolate: (Double, Double) -> Double = { a, b -> (a + b) / 2 }
+    interpolate: (Double, Double) -> Double = ::interpolateAverage
 ): Sequence<Double> = sequence {
     val iterators = tracks.map { it.iterator() }
 

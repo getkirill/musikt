@@ -22,10 +22,18 @@ class VoiceDsl {
     var waitAfterEnd = 5.seconds
     var sampleRate: Int = 44100
     private val voiceInstrument = VoiceInstrument()
+    var mixInterpolator
+        get() = voiceInstrument.sampleMixerInterpolator
+        set(value) {
+            voiceInstrument.sampleMixerInterpolator = value
+        }
     private val events = mutableListOf<VoiceDslEvent>()
 
     fun play(
-        instrument: Instrument, frequency: () -> Sequence<Double>, duration: Duration, cutoffBuffer: Duration = duration * 0.25
+        instrument: Instrument,
+        frequency: () -> Sequence<Double>,
+        duration: Duration,
+        cutoffBuffer: Duration = duration * 0.25
     ) {
         pushNote(instrument, frequency, duration + cutoffBuffer)
         wait(duration)

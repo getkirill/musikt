@@ -149,8 +149,8 @@ object PianoInstrument : FxInstrument(
         lowPassFilter(generateSequence { 400.0 })
             .gain(
                 envelope(
-                    peak = 1.0,
-                    sustain = 0.7,
+                    peak = 1.2,
+                    sustain = 1.0,
                     attackDuration = 100.milliseconds,
                     decayDuration = 200.milliseconds,
                     sustainDuration = Duration.ZERO,
@@ -177,7 +177,7 @@ data class Voice(val audioStream: Sequence<Double>, var samplesLeft: Long) {
 /**
  * Allows sequencing different instruments.
  */
-class VoiceInstrument : Instrument {
+class VoiceInstrument(var sampleMixerInterpolator: (Double, Double) -> Double = ::interpolateAverage) : Instrument {
     private val activeVoices = mutableListOf<Voice>()
 
     fun play(
@@ -197,7 +197,12 @@ class VoiceInstrument : Instrument {
     ): Sequence<Double> = sequence {
         while (true) {
             activeVoices.removeIf { it.samplesLeft <= 0 }
-            yield(if (activeVoices.isNotEmpty()) mixSamples(activeVoices.map { it.samplesLeft--; it.audioStreamIterator.next() }) else 0.0)
+            yield(
+                if (activeVoices.isNotEmpty()) mixSamples(
+                    activeVoices.map { it.samplesLeft--; it.audioStreamIterator.next() },
+                    sampleMixerInterpolator
+                ) else 0.0
+            )
         }
     }
 
