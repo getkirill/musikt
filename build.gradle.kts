@@ -10,13 +10,11 @@ repositories {
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
+    implementation("org.jetbrains.kotlin:kotlin-scripting-common")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm-host")
 }
 
 kotlin {
     jvmToolchain(25)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }
