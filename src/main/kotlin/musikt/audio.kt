@@ -7,24 +7,24 @@ import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
-fun interpolateAverage(a: Double, b: Double) = (a + b) / 2
-fun interpolateSum(a: Double, b: Double) = a + b
+fun mixAverage(a: Double, b: Double) = (a + b) / 2
+fun mixSum(a: Double, b: Double) = a + b
 
 fun mixSamples(
     samples: Iterable<Double>,
-    interpolate: (Double, Double) -> Double = ::interpolateAverage
-) = samples.reduceOrNull(interpolate) ?: 0.0
+    mixer: (Double, Double) -> Double = ::mixAverage
+) = samples.reduceOrNull(mixer) ?: 0.0
 
 fun mixAudio(
     tracks: Iterable<Sequence<Double>>,
-    interpolate: (Double, Double) -> Double = ::interpolateAverage
+    mixer: (Double, Double) -> Double = ::mixAverage
 ): Sequence<Double> = sequence {
     val iterators = tracks.map { it.iterator() }
 
     while (true) {
         val iteratorsWithSamples = iterators.filter { it.hasNext() }
         val hasMoreSamples = iteratorsWithSamples.isNotEmpty()
-        val mixedSample = mixSamples(iteratorsWithSamples.map { it.next() }, interpolate)
+        val mixedSample = mixSamples(iteratorsWithSamples.map { it.next() }, mixer)
 
         if (!hasMoreSamples) {
             break
@@ -34,13 +34,13 @@ fun mixAudio(
     }
 }
 
-fun Sequence<Double>.sampleAudio(duration: Duration, sampleRate: Int = 44100): Sequence<Double> = take(
+fun Sequence<Double>.sampleAudio(duration: Duration, sampleRate: Int = DEFAULT_SAMPLE_RATE): Sequence<Double> = take(
     (sampleRate * duration.toDouble(
         DurationUnit.SECONDS
     )).toInt()
 )
 
-fun Sequence<Double>.playAsAudio(sampleRate: Int = 44100) {
+fun Sequence<Double>.playAsAudio(sampleRate: Int = DEFAULT_SAMPLE_RATE) {
     val format = AudioFormat(sampleRate.toFloat(), 16, 1, true, false)
     val info = DataLine.Info(SourceDataLine::class.java, format)
     val line = AudioSystem.getLine(info) as SourceDataLine
@@ -73,14 +73,14 @@ fun Sequence<Double>.playAsAudio(sampleRate: Int = 44100) {
     line.close()
 }
 
-fun Sequence<Double>.saveAsAudio(sampleRate: Int = 44100) {
+fun Sequence<Double>.saveAsAudio(sampleRate: Int = DEFAULT_SAMPLE_RATE) {
     val caller =
         Thread.currentThread().stackTrace
             .last { !it.className.contains("musikt.AudioKt") && !it.className.contains("java.lang.Thread") }
     return saveAsAudio(File("${caller.className}.${caller.methodName}.wav"), sampleRate)
 }
 
-fun Sequence<Double>.saveAsAudio(file: File, sampleRate: Int = 44100) {
+fun Sequence<Double>.saveAsAudio(file: File, sampleRate: Int = DEFAULT_SAMPLE_RATE) {
     val format = AudioFormat(sampleRate.toFloat(), 16, 1, true, false)
 
     val byteList = mutableListOf<Byte>()
@@ -109,7 +109,7 @@ class Audio(val data: Sequence<Double>, val sampleRate: Int) : Sequence<Double> 
 }
 
 class AudioDsl {
-    var sampleRate = 44100
+    var sampleRate = DEFAULT_SAMPLE_RATE
     val tracks = mutableListOf<Pair<Instrument, Pattern>>()
     fun track(instrument: Instrument, pattern: PatternBuilder.() -> Unit) {
         val patternBuilder = PatternBuilder()

@@ -1,6 +1,9 @@
+import java.io.File
+
+val earthbound = SoundFont2(File("earthbound.sf2"))
 val timing = Timing(160.0)
 val key = Note.C4.semitones(8).major()
-val lead = SineWave.fx { gain(0.3) }
+val lead = earthbound[earthbound.presets.indices.random()].gain(0.3)
 track(lead) {
     play(key[0], timing.whole)
     rest(timing.eighth)

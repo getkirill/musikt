@@ -24,7 +24,7 @@ class Pattern(val sequence: Sequence<PatternEvent>) : Sequence<PatternEvent> by 
 class PatternBuilder {
     val events = mutableListOf<PatternEvent>()
     fun note(note: Note, duration: Duration, velocity: Double = 1.0) =
-        note(generateSequence { note.frequency }, duration, velocity)
+        note(sequenceOf { note.frequency }, duration, velocity)
 
     fun note(frequency: Sequence<Double>, duration: Duration, velocity: Double = 1.0) {
         events.add(PatternEvent.PlayNote(frequency, velocity, duration))

@@ -24,17 +24,30 @@ interface Instrument {
     /**
      * Creates a new voice to play.
      */
-    fun voice(frequency: Sequence<Double>, velocity: Double, sampleRate: Int = 44100): Voice
+    fun voice(frequency: Sequence<Double>, velocity: Double, sampleRate: Int = DEFAULT_SAMPLE_RATE): Voice
 }
 
-abstract class OscilatorVoice(override val frequency: Iterator<Double>, val sampleRate: Int = 44100) : Voice {
+fun osc(oscilatorFunction: (Double) -> Double) = OscilatorInstrument(oscilatorFunction)
+
+class OscilatorInstrument(val oscilatorFunction: (Double) -> Double) : Instrument {
+    override fun voice(
+        frequency: Sequence<Double>,
+        velocity: Double,
+        sampleRate: Int
+    ): Voice = OscilatorVoice(frequency.iterator(), sampleRate, oscilatorFunction)
+}
+
+class OscilatorVoice(
+    override val frequency: Iterator<Double>,
+    val sampleRate: Int = DEFAULT_SAMPLE_RATE,
+    val oscilatorFunction: (Double) -> Double
+) : Voice {
     val phaseStep get() = frequency.next() / sampleRate
     var phase = 0.0
     var active = true
-    abstract fun sample(phase: Double): Double
     override fun next(): Double {
         phase = (phase + phaseStep) % 1.0
-        return sample(phase)
+        return oscilatorFunction(phase)
     }
 
     override fun release() {
@@ -45,7 +58,7 @@ abstract class OscilatorVoice(override val frequency: Iterator<Double>, val samp
 }
 
 object SilentVoice : Voice {
-    override val frequency: Iterator<Double> = generateSequence { 0.0 }.iterator()
+    override val frequency: Iterator<Double> = sequenceOf { 0.0 }.iterator()
     override fun next(): Double = 0.0
     override fun hasNext(): Boolean = false
 }
@@ -67,28 +80,10 @@ class FxInstrument(val backing: Instrument, val fx: Sequence<Double>.() -> Seque
         FxVoice(backing.voice(frequency, velocity, sampleRate), fx)
 }
 
+/**
+ * Applies simple effects onto the audio sequence.
+ */
 fun Instrument.fx(fx: Sequence<Double>.() -> Sequence<Double>) = FxInstrument(this, fx)
-
-object SineWave : Instrument {
-    override fun voice(frequency: Sequence<Double>, velocity: Double, sampleRate: Int): Voice =
-        object : OscilatorVoice(frequency.iterator(), sampleRate) {
-            override fun sample(phase: Double): Double = sin(2.0 * PI * phase)
-        }
-}
-
-object TriangleWave : Instrument {
-    override fun voice(frequency: Sequence<Double>, velocity: Double, sampleRate: Int): Voice =
-        object : OscilatorVoice(frequency.iterator(), sampleRate) {
-            override fun sample(phase: Double): Double = 2 * asin(sin(2.0 * PI * phase)) / PI
-        }
-}
-
-object SawtoothWave : Instrument {
-    override fun voice(frequency: Sequence<Double>, velocity: Double, sampleRate: Int): Voice =
-        object : OscilatorVoice(frequency.iterator(), sampleRate) {
-            override fun sample(phase: Double): Double = -phase.mod(2.0) - 1
-        }
-}
 
 object Silence : Instrument {
     override fun voice(frequency: Sequence<Double>, velocity: Double, sampleRate: Int): Voice = SilentVoice
@@ -154,7 +149,6 @@ class Synthesizer(val instrument: Instrument, val sampleRate: Int) {
             val entry = iterator.next()
             if (currentSampleIndex >= entry.value) {
                 entry.key.release()
-                iterator.remove()
             }
         }
     }
